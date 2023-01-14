@@ -40,5 +40,13 @@ app.post("/participants", async (req, res) => {
 		console.log(err)
 		res.status(500).send("Deu algo errado no servidor")
 	  }
-}); 
+});
+
+app.get("/participants", async (req, res) => {
+	db.collection("participants").find().toArray().then(dados => {
+		return res.send(dados)
+	}).catch(() => {
+		res.status(500).send("Deu erro no servidor de banco de dados")
+	});
+});
 app.listen(5000, () => console.log("Rodando..."));
