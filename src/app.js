@@ -85,13 +85,28 @@ app.get("/messages", async (req, res) => {
 			mensagens = await db.collection("messages").find({ $or: [{ from: from }, { to: from }, {type: 'message'}, { to: 'Todos' }] }).toArray();
 		}else{
 			mensagens = await db.collection("messages").find({ $or: [{ from: from }, { to: from }, {type: 'message'}, { to: 'Todos' }] }).sort({"_id":-1}).limit(parseInt(limit)).toArray();
-			mensagens.reverse();
+			
 		}
 		const listaMensagens = mensagens.map(m => {
 			return {to: m.to, text: m.text, type: m.type, from: m.from, time: m.time}
 		});
 
 		res.send(listaMensagens);
+	} catch (err) {
+		console.log(err)
+		res.status(500).send("Deu algo errado no servidor")
+	}
+});
+
+app.post("/status", async (req, res) => {
+	const user = req.headers.user;
+	try {
+		const participanteCadastrado = await db.collection("participants").findOne({ name: user });
+		if (!participanteCadastrado) return res.sendStatus(404);
+		const participante = {name: user, lastStatus: Date.now()};
+		await db.collection("participants").updateOne({ name: user}, { $set: participante });
+		
+		res.sendStatus(200);
 	} catch (err) {
 		console.log(err)
 		res.status(500).send("Deu algo errado no servidor")
