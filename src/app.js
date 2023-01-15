@@ -13,7 +13,7 @@ try {
 	await mongoClient.connect();
 	console.log('MongoDB Connected!');
 } catch (err) {
-  console.log(err.message);
+	console.log(err.message);
 }
 const db = mongoClient.db();
 
@@ -30,16 +30,16 @@ app.post("/participants", async (req, res) => {
 	}
 	try {
 		const participanteJaCadastrado = await db.collection("participants").findOne(participante);
-	
+
 		if (participanteJaCadastrado) return res.status(409).send("Esse nome já está cadastrado!");
-	
+
 		await db.collection("participants").insertOne({ name: participante.name, lastStatus: Date.now() });
-		await db.collection("messages").insertOne({from: participante.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: `${dayjs().format('HH:mm:ss')}` });
+		await db.collection("messages").insertOne({ from: participante.name, to: 'Todos', text: 'entra na sala...', type: 'status', time: `${dayjs().format('HH:mm:ss')}` });
 		res.sendStatus(201);
-	  } catch (err) {
+	} catch (err) {
 		console.log(err)
 		res.status(500).send("Deu algo errado no servidor")
-	  }
+	}
 });
 app.get("/participants", async (req, res) => {
 	db.collection("participants").find().toArray().then(dados => {
@@ -63,28 +63,38 @@ app.post("/messages", async (req, res) => {
 		return res.status(422).send(errors);
 	}
 	try {
-		const participanteCadastrado = await db.collection("participants").findOne({name: from});
-	
+		const participanteCadastrado = await db.collection("participants").findOne({ name: from });
+
 		if (!participanteCadastrado) return res.status(422).send("User deve ser um participante existente na lista de participantes");
-	
-		await db.collection("messages").insertOne({from, to: mensagem.to, text: mensagem.text, type: mensagem.type, time: `${dayjs().format('HH:mm:ss')}` });
+
+		await db.collection("messages").insertOne({ from, to: mensagem.to, text: mensagem.text, type: mensagem.type, time: `${dayjs().format('HH:mm:ss')}` });
 
 		res.sendStatus(201);
-	  } catch (err) {
+	} catch (err) {
 		console.log(err)
 		res.status(500).send("Deu algo errado no servidor")
-	  }
+	}
 });
 app.get("/messages", async (req, res) => {
-	const limit = parseInt(req.query.limit);
+	const limit = req.query.limit ;
 	const from = req.headers.user;
-	if(req.query.limit !== undefined && !(limit > 0)) return res.sendStatus(422);
+	if (limit !== undefined && !(parseInt(limit) > 0)) return res.sendStatus(422);
 	try {
-		const mensagens = await db.collection("messages").find({$or: [{from}, {type: 'message'}, {to: from}, {to: 'Todos'}]}).sort({"_id":-1}).limit(limit).toArray();
-		res.send(mensagens.reverse());
-	  } catch (err) {
+		let mensagens;
+		if(limit === undefined){
+			mensagens = await db.collection("messages").find({ $or: [{ from: from }, { to: from }, {type: 'message'}, { to: 'Todos' }] }).toArray();
+		}else{
+			mensagens = await db.collection("messages").find({ $or: [{ from: from }, { to: from }, {type: 'message'}, { to: 'Todos' }] }).sort({"_id":-1}).limit(parseInt(limit)).toArray();
+			mensagens.reverse();
+		}
+		const listaMensagens = mensagens.map(m => {
+			return {to: m.to, text: m.text, type: m.type, from: m.from}
+		});
+
+		res.send(listaMensagens);
+	} catch (err) {
 		console.log(err)
 		res.status(500).send("Deu algo errado no servidor")
-	  }
+	}
 });
 app.listen(5000, () => console.log("Rodando..."));
