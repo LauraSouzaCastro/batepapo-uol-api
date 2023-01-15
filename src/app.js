@@ -88,7 +88,7 @@ app.get("/messages", async (req, res) => {
 			mensagens.reverse();
 		}
 		const listaMensagens = mensagens.map(m => {
-			return {to: m.to, text: m.text, type: m.type, from: m.from}
+			return {to: m.to, text: m.text, type: m.type, from: m.from, time: m.time}
 		});
 
 		res.send(listaMensagens);
