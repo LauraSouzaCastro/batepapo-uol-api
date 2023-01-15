@@ -78,7 +78,7 @@ app.post("/messages", async (req, res) => {
 app.get("/messages", async (req, res) => {
 	const limit = parseInt(req.query.limit);
 	const from = req.headers.user;
-	if(!(limit > 0)) return res.sendStatus(422);
+	if(req.query.limit !== undefined && !(limit > 0)) return res.sendStatus(422);
 	try {
 		const mensagens = await db.collection("messages").find({$or: [{from}, {type: 'message'}, {to: from}, {to: 'Todos'}]}).sort({"_id":-1}).limit(limit).toArray();
 		res.send(mensagens.reverse());
