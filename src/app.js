@@ -75,4 +75,16 @@ app.post("/messages", async (req, res) => {
 		res.status(500).send("Deu algo errado no servidor")
 	  }
 });
+app.get("/messages", async (req, res) => {
+	const limit = parseInt(req.query.limit);
+	const from = req.headers.user;
+	if(!(limit > 0)) return res.sendStatus(422);
+	try {
+		const mensagens = await db.collection("messages").find({$or: [{from}, {type: 'message'}, {to: from}, {to: 'Todos'}]}).sort({"_id":-1}).limit(limit).toArray();
+		res.send(mensagens.reverse());
+	  } catch (err) {
+		console.log(err)
+		res.status(500).send("Deu algo errado no servidor")
+	  }
+});
 app.listen(5000, () => console.log("Rodando..."));
