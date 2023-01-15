@@ -112,4 +112,15 @@ app.post("/status", async (req, res) => {
 		res.status(500).send("Deu algo errado no servidor")
 	}
 });
+
+async function removeUsurario(){
+	const participantes = await db.collection("participants").find({ lastStatus: {$lt: (Date.now()-10000)}}).toArray();
+	for(let i = 0; i < participantes.length; i++){
+		await db.collection("participants").deleteOne({name: participantes[i].name});
+		await db.collection("messages").insertOne({ from: participantes[i].name, to: 'Todos', text: 'sai da sala...', type: 'status', time: `${dayjs().format('HH:mm:ss')}` });
+	}
+}
+
+setInterval(removeUsurario, 15000);
+
 app.listen(5000, () => console.log("Rodando..."));
